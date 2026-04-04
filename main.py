@@ -1,7 +1,21 @@
+from contextlib import asynccontextmanager
+
 from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel
 
-app = FastAPI()
+from config import settings
+
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    print(
+        f"Config loaded: app_version={settings.app_version}, "
+        f"openai_api_key_present={bool(settings.openai_api_key)}"
+    )
+    yield
+
+
+app = FastAPI(lifespan=lifespan)
 
 
 class ChatRequest(BaseModel):
@@ -20,7 +34,7 @@ def health():
 
 @app.get("/version")
 def version():
-    return {"version": "0.1.0"}
+    return {"version": settings.app_version}
 
 
 @app.post("/chat", response_model=ChatResponse)
